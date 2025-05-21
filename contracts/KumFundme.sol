@@ -29,13 +29,19 @@ contract KumFundme{
         require(ethSent >= minimumVal, "Eth donated can't be less than $10");
         senderToValue[msg.sender] += ethSent;
 
-        Donor memory newDonor = Donor({
-            donor : msg.sender,
-            message: "Thank you for donating",
-            value : msg.value
-        });
-        addressToDonor[msg.sender] =  newDonor;
-        donors.push(newDonor);
+        if(addressToDonor[msg.sender].donor == address(0)){
+
+            Donor memory newDonor = Donor({
+                donor : msg.sender,
+                message: "Thank you for donating",
+                value : msg.value
+            });
+            addressToDonor[msg.sender] =  newDonor;
+            donors.push(newDonor);
+        }
+        else{
+            addressToDonor[msg.sender].value += msg.value;
+        }
         return "Transaction Successful";
     }
 
@@ -45,6 +51,13 @@ contract KumFundme{
     }
 
     function withdrawAllFunds() public onlyOwner{
+
+        for(uint256 i = 0; i < donors.length; i++){
+            address donorAddress = donors[i].donor;
+
+            donors[i].value = 0;
+            addressToDonor[donorAddress].value = 0;
+        }
         (bool success,) = payable (msg.sender).call{value: address(this).balance}("");
         require(success, "Withdraw operation failed");
     }
